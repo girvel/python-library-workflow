@@ -2,6 +2,10 @@ name: Test & publish 📦 to PyPI
 
 on:
   workflow_call:
+    secrets:
+      REPO_TOKEN:
+        type: string
+        required: true
 
 jobs:
   test:
@@ -84,4 +88,4 @@ jobs:
         LABEL: 'Test coverage'
         STATUS: ${{ steps.get.outputs.coverage }}
         COLOR: ${{ steps.color.outputs.value }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
