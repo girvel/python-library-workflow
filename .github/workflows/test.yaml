@@ -44,7 +44,7 @@ jobs:
           | tee coverage.txt
 
     - name: Upload coverage artifact
-      uses: actions/upload_artifact@v2
+      uses: actions/upload-artifact@v2
       if: matrix.os == 'ubuntu-20.04'
       with:
         name: coverage
