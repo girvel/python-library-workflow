@@ -1,0 +1,87 @@
+name: Test & publish 📦 to PyPI
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Launch tests & calculate coverage
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04, windows-2019]
+    runs-on: ${{ matrix-os }}
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install --user -e .
+        pip install coverage
+
+    - name: Launch unit tests
+      run: python -m unittest discover -s tests
+
+    - name: Launch integration tests
+      run: |
+        coverage run --source tiny_storage -m unittest discover -s \
+          integration_tests
+
+    - name: Parse report
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        coverage report | tee report.txt
+        cat report.txt \
+          | sed -n 's/TOTAL[[:space:]]*[[:digit:]]*[[:space:]]*[[:digit:]]*[[:space:]]*// p' \
+          | tee coverage.txt
+
+    - name: Upload coverage artifact
+      uses: actions/upload_artifact@v2
+      if: matrix.os == 'ubuntu-20.04'
+      with:
+        name: coverage
+        path: coverage.txt
+
+  generate-badge:
+    needs: test
+    name: Generate test coverage badge
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Download coverage artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: coverage
+
+    - name: Get artifact content
+      id: get
+      run: echo '::set-output name=coverage::'$(cat coverage.txt)
+
+    - name: Determine badge color
+      id: color
+      run: |
+        value=$(cat coverage.txt | sed 's/.$//')
+        
+        if (( $value == 100 )); then
+          echo '::set-output name=value::yellow'
+        elif (( $value >= 98 )); then
+          echo '::set-output name=value::green'
+        elif (( $value >= 80 )); then 
+          echo '::set-output name=value::blue'
+        else
+          echo '::set-output name=value::red'
+        fi
+
+    - name: Generate a badge
+      uses: RubbaBoy/BYOB@v1.2.1
+      with:
+        NAME: coverage
+        LABEL: 'Test coverage'
+        STATUS: ${{ steps.get.outputs.coverage }}
+        COLOR: ${{ steps.color.outputs.value }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
