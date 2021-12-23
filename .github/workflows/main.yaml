@@ -112,6 +112,10 @@ jobs:
 
     - name: Install pypa/build
       run: python -m pip install build --user
+      
+    - name: \[release] Explicitly set version
+      if: inputs.publish_as == 'release'
+      run: sed -Ei "s/([[:blank:]]*)# version hook/\1version=`git tag --points-at HEAD`" setup.py
 
     - name: \[release] Build a binary wheel and a source tarball
       if: inputs.publish_as == 'release'
