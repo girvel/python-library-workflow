@@ -11,6 +11,8 @@ on:
     secrets:
       REPO_TOKEN:
         required: true
+      PYPI_API_TOKEN:
+        required: false
 
 jobs:
   test:
